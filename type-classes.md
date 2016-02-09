@@ -30,11 +30,11 @@ $\Huge{=}$
 
 ----
 
-$\Huge{f(x)=g(x)}$ <!-- .element: class="fragment" data-fragment-index="1" -->
+$\Huge{f(x)=g(x)}$ 
 
-$\Huge{g(x)=f(x)}$ <!-- .element: class="fragment" data-fragment-index="2" -->
+$\Huge{g(x)=f(x)}$ <!-- .element: class="fragment" data-fragment-index="1" -->
 
-Note: In programming this is called referential transparency
+Note: this allows us to do equational reasoning
 
 ----
 
@@ -51,6 +51,109 @@ $\Huge{f(x) = sin(x)}$
 ----
 
 $\Huge{f(x) = \sqrt{x}}$
+
+---
+
+# Programming with effects
+
+----
+
+$$
+\Large{\frac{1}{0}}
+$$
+
+$$\Large{\sqrt{-1}}$$ <!-- .element: class="fragment" data-fragment-index="1" -->
+
+----
+
+$$
+{inv: \mathbb{Z} \rightarrow \mathbb{R}}, \quad inv(x) = ???
+$$
+
+----
+
+$$
+{inv: \mathbb{Z} \rightarrow \mathbb{R}}, \quad inv(x) = 
+ \begin{cases}
+  \frac{1}{x} & x \neq 0  \\\\
+   ??? & x = 0
+  \end{cases}
+$$
+
+----
+
+$$
+{inv: \mathbb{Z} \rightarrow \mathbb{R}}, \quad inv(x) = 
+ \begin{cases}
+  \frac{1}{x} & x \neq 0  \\\\
+   \varnothing & x = 0
+  \end{cases}
+$$
+
+How does it look in functional style?
+<!-- .element: class="fragment" data-fragment-index="0" -->
+
+```scala
+def inv(x:Integer):Option[Double] = if (x!=0) 
+                                       Some(1/x)
+                                    else 
+                                       None 
+```
+<!-- .element: class="fragment" data-fragment-index="1" -->
+
+----
+
+${sqrt:\mathbb{R} \rightarrow \mathbb{R}}, \quad sqrt(x) = ???$ 
+
+----
+
+$$
+{sqrt:\mathbb{R} \rightarrow \mathbb{R}}, \quad sqrt(x) = 
+ \begin{cases}
+  \sqrt{x} & x \geq 0  \\\\
+   ??? & x < 0
+  \end{cases}
+$$ 
+
+----
+
+$$
+{sqrt:\mathbb{R} \rightarrow \mathbb{C}}, \quad sqrt(x) = 
+ \begin{cases}
+  \sqrt{x} & x \geq 0  \\\\
+   \sqrt{-x}j & x < 0
+  \end{cases}
+$$ 
+
+How does it look in functional style?
+<!-- .element: class="fragment" data-fragment-index="0" -->
+
+```scala
+sealed abstract class RootResult
+case class Real(val v:Double) extends RootResult
+case class Img(val v:Double) extends RootResult
+
+def sqrt(x:Double):RootResult = if (x>=0) 
+                                   Real(math.sqrt(x))
+                                else 
+                                   Img(math.sqrt(-x))
+```
+<!-- .element: class="fragment" data-fragment-index="1" -->
+
+----
+
+## Take aways
+
+There are lots of interesting effects:
+
+- IO
+- Futures
+- Exceptions
+- ...
+
+> In a functional language effects are modelled by mapping those effects to
+> algebraic data types so we are still working with pure functions
+<!-- .element: class="fragment" data-fragment-index="1" -->
 
 ---
 
@@ -80,15 +183,26 @@ http://userpages.uni-koblenz.de/~laemmel/paradigms1011/resources/pdf/xproblem.pd
 
 ## Example
 
-```scala
-sealed trait TrafficLight
-case object Red extends TrafficLight
-case object Yellow extends TrafficLight
-case object Green extends TrafficLight
-```
+![semaphore](images/semaphore.jpg)
+
+- Lights are modelled as separate entities
+- Light entities can be queried for allowing pass in a street
+
+----
 
 - **QUESTION:** How would you add the `equals` functionality in OO?
 - **QUESTION:** How would you rework all your existing logic in FP?
+
+----
+
+----
+
+## Type classes an unfortunate name
+
+Type classes are a type construct that enforces that a given type belongs to a
+set of "like minded" types 
+
+So maybe `Type Sets`??
 
 ----
 
@@ -169,36 +283,6 @@ Option : * -> *
 <!-- .element: class="fragment" data-fragment-index="0" -->
 
 ----
-
-# Programming with effects
-
-----
-
-$\Large{\frac{1}{0}}$ <!-- .element: class="fragment" data-fragment-index="0" -->
-
-$\Large{\sqrt{-1}}$ <!-- .element: class="fragment" data-fragment-index="2" -->
-
-----
-
-$$
-{inv: \mathbb{Z} \rightarrow \mathbb{R}}, \quad inv(x) = ???
-$$
-
-----
-
-$$
-{inv: \mathbb{Z} \rightarrow \mathbb{R}}, \quad inv(x) = 
- \begin{cases}
-  \frac{1}{x} & x \neq 0  \\\\
-   \varnothing & x = 0
-  \end{cases}
-$$
-
-----
-
-$\Large{\sqrt{-1} = j}$ 
-
----
 
 # Typeclassopedia
 
