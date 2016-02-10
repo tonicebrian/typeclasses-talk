@@ -302,47 +302,6 @@ Option : * -> *
 
 ----
 
-## Functor
-
-```scala
-trait Functor[F[_]]  { self =>
-  /** Lift `f` into `F` and apply to `F[A]`. */
-  def map[A, B](fa: F[A])(f: A => B): F[B]
-
-  ...
-}
-```
-
-Solves the problem of using functions already defined for some types when those
-types are embedded in effectful computations
-
-----
-
-## Applicative
-
-What happens when our function to map has more input parameters than `f: A => B`?
-
-```scala
-trait Applicative[F[_]] extends Apply[F] { self =>
-  def point[A](a: => A): F[A]
-
-    /** alias for `point` */
-      def pure[A](a: => A): F[A] = point(a)
-
-        ...
-}
-
-trait Apply[F[_]] extends Functor[F] { self =>
-  def ap[A,B](fa: => F[A])(f: => F[A => B]): F[B]
-}
-```
-
----
-
-Check http://meta.plasm.us/posts/2013/06/05/applicative-validation-syntax/
-
-----
-
 ## Monoid
 
 ```scala
@@ -364,17 +323,195 @@ trait Monoid[A] extends Semigroup[A] { self =>
 
 ----
 
-## Monad
+## The most used type classes
 
+- Strings with `""` and `+`
+- Integers with `0` and `+` or `1` and `*`
+- Matrices with `Identity Matrix` and `Matrix Multiplication`
+
+----
+
+## Functor
 
 ```scala
-trait Monad[F[_]]  { self =>
+trait Functor[F[_]]  { self =>
+  /** Lift `f` into `F` and apply to `F[A]`. */
+  def map[A, B](fa: F[A])(f: A => B): F[B]
 
-  def point[A](a:A):F[A]
-
-  def bind[A,B](fa: F[A])(f: A => B)
+  ...
 }
 ```
+
+Solves the problem of using functions already defined for some types when those
+types are embedded in effectful computations
+
+----
+
+## Functor for our RootResult example
+
+```scala
+implicit val rootResultFunctor : Functor[RootResult] = new Functor[RootResult] {
+  override def map[A, B](fa: RootResult[A])(f: (A) => B): RootResult[B] = fa match {
+    case Real(v:A) => Real[B](f(v))
+    case Img(v:A) => Img[B](f(v))
+  }
+}
+```
+
+```scala
+scala> val F = Functor[RootResult]
+F: scalaz.Functor[foo.RootResult] = foo.Foo$$anon$1@67b0d590
+
+scala> F.map(Real(5.0)){x => (x+1).toInt}
+res9: foo.RootResult[Int] = Real(6)
+```
+<!-- .element: class="fragment" data-fragment-index="1" -->
+
+----
+
+## Applicative
+
+What happens when our function to map has more input parameters than `f: A => B`?
+
+```scala
+trait Applicative[F[_]] extends Apply[F] { self =>
+  def point[A](a: => A): F[A]
+
+  /** alias for `point` */
+  def pure[A](a: => A): F[A] = point(a)
+
+  ...
+}
+
+trait Apply[F[_]] extends Functor[F] { self =>
+  def ap[A,B](fa: => F[A])(f: => F[A => B]): F[B]
+}
+```
+
+----
+
+## Applicative example
+
+Suppose that you have to validate a form in order to fill some model object
+
+```scala
+case class MyFoo(a: Int, b: Char, c: String)
+
+type ErrorsOr[A] = ValidationNel[String, A]
+type Validator[A] = String => ErrorsOr[A]
+
+val checkA: Validator[Int] = (s: String) =>
+  try s.toInt.success catch {
+    case _: NumberFormatException => "Not a number!".failureNel
+  }
+
+val checkB: Validator[Char] = (s: String) =>
+  if (s.size != 1 || s.head < 'a' || s.head > 'z') {
+    "Not a lower case letter!".failureNel
+  } else s.head.success
+
+val checkC: Validator[String] = (s: String) =>
+  if (s.size == 4) s.success else "Wrong size!".failureNel
+```
+
+----
+
+```scala
+def validateFoo(a: String, b: String, c: String) =
+   (checkA(a) |@| checkB(b) |@| checkC(c))(MyFoo.apply _)
+```
+
+```
+scala> validateFoo("5","c", "1234")
+res1: foo.Foo.ErrorsOr[foo.Foo.MyFoo] = Success(MyFoo(5,c,1234))
+
+scala> validateFoo("5","B", "123")
+res3: foo.Foo.ErrorsOr[foo.Foo.MyFoo] = Failure(NonEmpty[Not a lower case letter!,Wrong size!])
+```
+
+----
+
+## Monad
+
+The scary M-word!!!
+
+```scala
+trait Monad[F[_]] extends Applicative[F] with Bind[F] { self =>
+  ////
+}
+```
+
+```scala
+trait Bind[F[_]] extends Apply[F] { self =>
+  /** Equivalent to `join(map(fa)(f))`. */
+  def bind[A, B](fa: F[A])(f: A => F[B]): F[B]
+}
+```
+
+----
+
+A Monad is a structure that represents computations defined as a sequence of steps
+
+----
+
+## Example
+
+The naïve programmer doing some analytics does:
+
+```scala
+val person = personMap.get("Name");
+process(person.getAddress().getCity());
+```
+
+but this can explode in several places. Let's try to be safe:
+
+```scala
+personMap.get("Name") match {
+  case Some(person) => person.getAddress() match {
+    case Some(address) => address.getCity() match {
+      case Some(city) => process(city)
+      case None => Unit
+    }
+    case None => Unit
+  }
+  case None => Unit
+}
+```
+
+
+----
+
+## Monadic style
+
+```scala
+personMap.get("Name") >>= {_.getAddress} >>= {_.getCity} match {
+      case Some(city) => process(city)
+      case None => Unit
+}
+```
+
+
+----
+
+## Famous monads
+
+- Option
+- Future
+- List
+- State
+- Writer 
+- Reader
+- etc...
+
+----
+
+# Take Away
+
+By substituting effects by data:
+
+- we have less boilerplate
+- we could add more effectful computations without writing code
+- we could benefit from common constructs on top of familiar concepts, an applicative parser, a monad for deterministic parallelism, etc
 
 ---
 
@@ -383,3 +520,6 @@ trait Monad[F[_]]  { self =>
 - [Learning Scalaz](http://eed3si9n.com/learning-scalaz/)
 - [Category Theory for
   Programmers](http://bartoszmilewski.com/2014/10/28/category-theory-for-programmers-the-preface/)
+- [Validation example](http://meta.plasm.us/posts/2013/06/05/applicative-validation-syntax/)
+- [Railway oriented programming](http://www.slideshare.net/ScottWlaschin/railway-oriented-programming)
+- [Neural Networks Types and Functional Programming](http://colah.github.io/posts/2015-09-NN-Types-FP/)
