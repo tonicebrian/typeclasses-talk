@@ -1,6 +1,6 @@
 # Type classes usage patterns
 
-Toni Cebrián
+@tonicebrian
 
 ----
 
@@ -51,6 +51,14 @@ $\Huge{f(x) = sin(x)}$
 ----
 
 $\Huge{f(x) = \sqrt{x}}$
+
+
+----
+
+## Take aways
+
+- Given a set of input parameters a function always returns the same result
+- Equality means interchangeability not assignment
 
 ---
 
