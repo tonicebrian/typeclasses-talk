@@ -190,31 +190,35 @@ http://userpages.uni-koblenz.de/~laemmel/paradigms1011/resources/pdf/xproblem.pd
 
 ----
 
-- **QUESTION:** How would you add the `equals` functionality in OO?
-- **QUESTION:** How would you rework all your existing logic in FP?
+![Three lights](images/three-lights.jpg)
+
+- **QUESTION:** How would you add the `order` functionality in OO?
+- **QUESTION:** How would you add the yellow light entity in FP?
 
 ----
 
+## An unfortunate name
+
+Type classes are a type construct 
+
+that enforces that a given type belongs to a set 
+<!-- .element: class="fragment" data-fragment-index="1" -->
+
+of "like minded" types 
+<!-- .element: class="fragment" data-fragment-index="2" -->
+
+So maybe Type Sets?? 
+<!-- .element: class="fragment" data-fragment-index="3" -->
+
 ----
 
-## Type classes an unfortunate name
-
-Type classes are a type construct that enforces that a given type belongs to a
-set of "like minded" types 
-
-So maybe `Type Sets`??
-
-----
-
-## Let's define the contract
+## This is the API the type class provides
 
 ```scala
 trait CanCrossy[A] { self =>
   def crossys(a: A): Boolean
 }
-```
-
-```scala
+ 
 object CanCrossy {
   def apply[A](implicit ev: CanCrossy[A]): CanCrossy[A] = ev
   def crossys[A](f: A => Boolean): CanCrossy[A] = new CanCrossy[A] {
@@ -225,15 +229,15 @@ object CanCrossy {
 
 ----
 
+## This is the API the type class provides
+
 ```scala
 trait CanCrossyOps[A] {
   def self: A
   implicit def F: CanCrossy[A]
-  final def crossy: Boolean = F.truthys(self)
+  final def crossy: Boolean = F.crossys(self)
 }
-```
 
-```scala
 object ToCanIsCrossyOps {
   implicit def toCanIsCrossyOps[A](v: A)(implicit ev: CanCrossy[A]) =
     new CanCrossyOps[A] {
@@ -245,11 +249,23 @@ object ToCanIsCrossyOps {
 
 ----
 
+## In code we need to import operations in scope
+
 ```scala
 import ToCanIsCrossyOps._
 ```
 
 ----
+
+
+## Now our old types have new operations
+
+```scala
+abstract class TrafficLight
+case object Red extends TrafficLight
+case object Yellow extends TrafficLight
+case object Green extends TrafficLight
+```
 
 ```scala
 scala> implicit val trafficLightCanCrossy: CanCrossy[TrafficLight] = CanCrossy.crossys({
@@ -258,7 +274,7 @@ scala> implicit val trafficLightCanCrossy: CanCrossy[TrafficLight] = CanCrossy.c
          case _      => true
        })
 
-scala> Yellow.crossys
+scala> (Red : TrafficLight).crossy
 res6: Boolean = false
 ```
 
@@ -272,8 +288,6 @@ value in another type
 ```scala
 f: A => B
 ```
-
-
 
 A kind is the type of a type constructor  <!-- .element: class="fragment" data-fragment-index="0" -->
 
@@ -299,20 +313,33 @@ trait Functor[F[_]]  { self =>
 }
 ```
 
+Solves the problem of using functions already defined for some types when those
+types are embedded in effectful computations
+
 ----
 
 ## Applicative
 
-What happens when our function to map has more input parameters than $f:A \rightarrow B$?
+What happens when our function to map has more input parameters than `f: A => B`?
 
 ```scala
-trait Functor[F[_]]  { self =>
-  /** Lift `f` into `F` and apply to `F[A]`. */
-  def map[A, B](fa: F[A])(f: A => B): F[B]
+trait Applicative[F[_]] extends Apply[F] { self =>
+  def point[A](a: => A): F[A]
 
-  ...
+    /** alias for `point` */
+      def pure[A](a: => A): F[A] = point(a)
+
+        ...
+}
+
+trait Apply[F[_]] extends Functor[F] { self =>
+  def ap[A,B](fa: => F[A])(f: => F[A => B]): F[B]
 }
 ```
+
+---
+
+Check http://meta.plasm.us/posts/2013/06/05/applicative-validation-syntax/
 
 ----
 
