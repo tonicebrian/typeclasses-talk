@@ -38,6 +38,23 @@ Note: this allows us to do equational reasoning
 
 ----
 
+## This
+
+$\Huge{x=f(x)}$ 
+
+$\Huge{y=g(x)}$ 
+
+----
+
+## is the same thing as this
+
+$\Huge{y=g(x)}$ 
+
+$\Huge{x=f(x)}$ 
+
+
+----
+
 $\Huge{f(x) = 5}$
 
 ----
@@ -276,7 +293,8 @@ case object Green extends TrafficLight
 ```
 
 ```scala
-scala> implicit val trafficLightCanCrossy: CanCrossy[TrafficLight] = CanCrossy.crossys({
+scala> implicit val trafficLightCanCrossy: CanCrossy[TrafficLight] = 
+       CanCrossy.crossys({
          case Red    => false
          case Yellow => false
          case _      => true
@@ -306,7 +324,20 @@ Option : * -> *
 
 ----
 
+## Take aways
+
+- A type class is a special type constructor
+- It states that a type belongs to a new set
+- Belonging to that set means implementing an interface (and respecting some
+  laws)
+
+---
+
 # Typeclassopedia
+
+----
+
+![Type classes everywhere](images/bettle-collection.jpg)
 
 ----
 
@@ -400,7 +431,7 @@ trait Apply[F[_]] extends Functor[F] { self =>
 
 ## Applicative example
 
-Suppose that you have to validate a form in order to fill some model object
+Suppose that you have to validate a form
 
 ```scala
 case class MyFoo(a: Int, b: Char, c: String)
@@ -434,7 +465,10 @@ scala> validateFoo("5","c", "1234")
 res1: foo.Foo.ErrorsOr[foo.Foo.MyFoo] = Success(MyFoo(5,c,1234))
 
 scala> validateFoo("5","B", "123")
-res3: foo.Foo.ErrorsOr[foo.Foo.MyFoo] = Failure(NonEmpty[Not a lower case letter!,Wrong size!])
+res3: foo.Foo.ErrorsOr[foo.Foo.MyFoo] = 
+     Failure(NonEmpty[
+         Not a lower case letter!,
+         Wrong size!])
 ```
 
 ----
