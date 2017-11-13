@@ -120,7 +120,7 @@ How does it look in functional style?
 
 ```scala
 def inv(x:Integer):Option[Double] = if (x!=0) 
-                                       Some(1/x)
+                                       Some(1.0/x)
                                     else 
                                        None 
 ```
